@@ -1,3 +1,4 @@
+import os
 import torch
 from torch import nn
 
@@ -50,6 +51,10 @@ class Attention(nn.Module):
             nn.Dropout(dropout)
         ) if project_out else nn.Identity()
 
+        self.debug_mode = os.getenv('DEBUG', 'False').lower() in ('true', '1', 't')
+        if self.debug_mode:
+            self.attn_weights = None  # Attribute to store attention weights
+
     def forward(self, x):
         x = self.norm(x)
 
@@ -59,6 +64,8 @@ class Attention(nn.Module):
         dots = torch.matmul(q, k.transpose(-1, -2)) * self.scale
 
         attn = self.attend(dots)
+        if self.debug_mode:
+            self.attn_weights = attn  # Store the attention weights in debug mode
         attn = self.dropout(attn)
 
         out = torch.matmul(attn, v)
